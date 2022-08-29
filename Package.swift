@@ -6,7 +6,7 @@ import PackageDescription
 let package = Package(
     name: "domopult-extension",
     platforms: [
-        .macOS(.v10_14), .iOS(.v13), .tvOS(.v13)
+        .macOS(.v12), .iOS(.v15), .tvOS(.v15)
     ],
     dependencies: [
         // Dependencies declare other packages that this package depends on.

@@ -24,25 +24,15 @@ final class Api {
      Accept-Encoding: gzip, deflate, br
      */
 
-    public func tickets(first count: UInt, completion: @escaping ((Result<[Int],Error>)->Void)) {
-        guard let url = makeURL(for: .tickets(count: count)) else {
-            fatalError("url building error")
+    public func ticketIds(take count: UInt) async -> Result<[Int], Error> {
+        let url = makeURL(route: .tickets(count: count))
+        do {
+            let (data, _) = try await session.data(for: request(url: url))
+            let resultedIds = try self.jsonDecoder.decode(TicketsResponse.self, from: data).results.map({ $0.id })
+            return .success(resultedIds)
+        } catch {
+            return .failure(error)
         }
-        let request = request(url: url)
-        session.dataTask(with: request) { [weak self] data, response, error in
-            guard let self = self,
-                  let data = data,
-                  error == nil else {
-                return
-            }
-            do {
-                let resultedIds = try self.jsonDecoder.decode(TicketsResponse.self, from: data).results.map({ $0.id })
-                print("Number of tickets found: \(resultedIds.count)")
-                completion(.success(resultedIds))
-            } catch {
-                completion(.failure(error))
-            }
-        }.resume()
     }
 
     /*
@@ -57,37 +47,15 @@ final class Api {
      Accept-Encoding: gzip, deflate, br
      */
 
-    public func ticketDetail(id: Int, completion: @escaping (Result<Ticket, Error>)->Void) {
-        guard let url = makeURL(for: .ticketInfo(id: id)) else {
-            completion(.failure(TicketsError.noData))
-            return
+    public func ticketDetail(id: Int) async -> Result<Ticket,Error> {
+        let url = makeURL(route: .ticketInfo(id: id))
+        do {
+            let (data, _) = try await session.data(for: request(url: url))
+            let ticket = try self.jsonDecoder.decode(Ticket.self, from: data)
+            return .success(ticket)
+        } catch {
+            return .failure(error)
         }
-        let request = request(url: url)
-        session.dataTask(with: request) { [weak self] data, response, error in
-            guard let self = self else {
-                return
-            }
-            if let error = error {
-                completion(.failure(error))
-                return
-            }
-            if let httpResponse = response as? HTTPURLResponse,
-               httpResponse.statusCode != 200 {
-                completion(.failure(TicketsError.failed(statusCode: httpResponse.statusCode)))
-                return
-            }
-            guard let data = data else {
-                completion(.failure(TicketsError.noData))
-                return
-            }
-            do {
-                let ticket = try self.jsonDecoder.decode(Ticket.self, from: data)
-                completion(.success(ticket))
-                return
-            } catch {
-                completion(.failure(error))
-            }
-        }.resume()
     }
 
     private func request(url: URL) -> URLRequest {
@@ -102,7 +70,7 @@ final class Api {
     }
 }
 
-private func makeURL(for route: Route) -> URL? {
+fileprivate func makeURL(route: Route) -> URL {
     var urlComponents = URLComponents()
     urlComponents.scheme = "https"
     urlComponents.host = "gc-expert.domopult.ru"
@@ -110,9 +78,10 @@ private func makeURL(for route: Route) -> URL? {
     case .tickets(let count):
         urlComponents.path = "/api/api/clients/tickets/searchwstats"
         urlComponents.query = "page=0&size=\(count)&states=&query="
-        return urlComponents.url
+        return urlComponents.url!
     case .ticketInfo(let id):
         urlComponents.path = "/api/api/clients/tickets/\(id)"
-        return urlComponents.url
+        return urlComponents.url!
     }
 }
+
