@@ -1,10 +1,3 @@
-//
-//  File.swift
-//  
-//
-//  Created by Konstantin Khetagurov on 28.08.2022.
-//
-
 import Foundation
 
 func createFile(name: String = "result.csv", path: String = FileManager.default.currentDirectoryPath,  contents: Data) {

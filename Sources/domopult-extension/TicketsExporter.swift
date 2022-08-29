@@ -1,7 +1,8 @@
 import Foundation
 
-struct Runner {
-    static func run() async {
+@main
+struct TicketsFetcher {
+    static func main() async throws {
         let api = Api()
         let result = await api.ticketIds(take: 5)
         switch result {
@@ -32,9 +33,3 @@ struct Runner {
         }
     }
 }
-
-Task {
-    await Runner.run()
-}
-
-dispatchMain()
